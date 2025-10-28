@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { XCircle } from "lucide-react";
 
-const API_URL = "http://127.0.0.1:8001/api/v1";
+const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 const predefinedVirtues = [
   { id: "resilience", label: "Resilience" },

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-const API_URL = "http://127.0.0.1:8001/api/v1";
+const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 const Reflection = () => {
   const navigate = useNavigate();

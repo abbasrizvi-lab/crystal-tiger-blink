@@ -9,7 +9,7 @@ import { Mail, Slack, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const API_URL = "http://127.0.0.1:8001/api/v1";
+const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface IntegrationSettings {
   connected: boolean;
