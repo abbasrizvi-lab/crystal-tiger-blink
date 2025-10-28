@@ -221,13 +221,17 @@ def get_dashboard_data(current_user: models.User = Depends(auth.get_current_user
     
     try:
         random_quote = next(quote_cursor)
-        random_quote['_id'] = str(random_quote['_id'])
-        daily_quote = random_quote
+        daily_quote = {
+            "quote": random_quote["text"],
+            "author": random_quote["author"],
+            "reflectionPrompt": "How can you apply this wisdom to your work today?"
+        }
     except StopIteration:
         # Handle the case where the quotes collection is empty
         daily_quote = {
-            "text": "The journey of a thousand miles begins with a single step.",
-            "author": "Lao Tzu"
+            "quote": "The journey of a thousand miles begins with a single step.",
+            "author": "Lao Tzu",
+            "reflectionPrompt": "What is the first step you can take on your journey today?"
         }
 
     # --- Fetch News Articles ---
@@ -236,28 +240,34 @@ def get_dashboard_data(current_user: models.User = Depends(auth.get_current_user
     articles = list(articles_cursor)
 
     if articles:
-        for article in articles:
-            article['_id'] = str(article['_id'])
+        news_articles = [
+            {
+                "id": str(article["_id"]),
+                "title": article["title"],
+                "summary": article.get("summary", "No summary available."),
+                "link": article["url"]
+            } for article in articles
+        ]
     else:
         # Provide default articles if the collection is empty
-        articles = [
+        news_articles = [
             {
-                "_id": "default1",
+                "id": "default1",
                 "title": "The Importance of Mindfulness in Daily Life",
-                "url": "#",
-                "source": "Mindful Magazine"
+                "summary": "Discover how mindfulness can improve your focus and well-being.",
+                "link": "#"
             },
             {
-                "_id": "default2",
+                "id": "default2",
                 "title": "How to Cultivate a Growth Mindset",
-                "url": "#",
-                "source": "Psychology Today"
+                "summary": "Learn the strategies to develop a mindset that embraces challenges.",
+                "link": "#"
             }
         ]
     
     return {
         "dailyQuote": daily_quote,
-        "newsArticles": articles,
+        "newsArticles": news_articles,
         "growthTrends": growth_trends,
     }
 
