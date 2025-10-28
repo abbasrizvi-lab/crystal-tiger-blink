@@ -20,8 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { XCircle } from "lucide-react";
-
-const API_URL = import.meta.env.VITE_API_BASE_URL;
+import apiClient from "@/lib/api";
 
 const predefinedVirtues = [
   { id: "resilience", label: "Resilience" },
@@ -64,23 +63,23 @@ const Settings = () => {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const response = await fetch(`${API_URL}/users/me/settings`, {
-          credentials: 'include',
-        });
-        if (!response.ok) {
+        const response = await apiClient.get("/users/me/settings");
+        if (response.status !== 200) {
           if (response.status === 401) {
             navigate("/");
           }
           throw new Error("Failed to fetch settings");
         }
-        if (!response.ok) throw new Error("Failed to fetch settings");
-        const settings = await response.json();
+        const settings = response.data;
         form.reset({ priorityVirtues: settings.priorityVirtues });
         setCustomVirtues(settings.customVirtues);
         const customVirtuesObjects = settings.customVirtues.map((v: string) => ({ id: v.toLowerCase().replace(/\s/g, '-'), label: v }));
         setAllVirtues([...predefinedVirtues, ...customVirtuesObjects]);
-      } catch (error) {
-        toast.error(String(error));
+      } catch (error: any) {
+        toast.error(error.response?.data?.detail || String(error));
+        if (error.response?.status === 401) {
+          navigate("/");
+        }
       }
     };
     fetchSettings();
@@ -119,22 +118,17 @@ const Settings = () => {
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     try {
-      const response = await fetch(`${API_URL}/users/me/settings`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          priorityVirtues: data.priorityVirtues,
-          customVirtues: customVirtues,
-        }),
+      const response = await apiClient.put("/users/me/settings", {
+        priorityVirtues: data.priorityVirtues,
+        customVirtues: customVirtues,
       });
-      if (!response.ok) throw new Error("Failed to update settings");
+      if (response.status !== 200) {
+        throw new Error("Failed to update settings");
+      }
       toast.success("Priority virtues updated!");
       navigate("/dashboard");
-    } catch (error) {
-      toast.error(String(error));
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || String(error));
     }
   }
 

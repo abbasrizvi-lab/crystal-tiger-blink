@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-
-const API_URL = import.meta.env.VITE_API_BASE_URL;
+import apiClient from "@/lib/api";
 
 const Reflection = () => {
   const navigate = useNavigate();
@@ -51,16 +50,14 @@ const Reflection = () => {
       if (audioBlob) {
         formData.append("file", audioBlob, "moment.webm");
       }
-      const response = await fetch(`${API_URL}/moments`, {
-        method: "POST",
-        credentials: 'include',
-        body: formData,
-      });
-      if (!response.ok) throw new Error(`Failed to save ${type}`);
+      const response = await apiClient.post("/moments", formData);
+      if (response.status !== 200) {
+        throw new Error(`Failed to save ${type}`);
+      }
       toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} saved successfully!`);
       navigate(type === "reflection" ? "/reflections" : "/moments");
-    } catch (error) {
-      toast.error(String(error));
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || String(error));
     }
   };
 

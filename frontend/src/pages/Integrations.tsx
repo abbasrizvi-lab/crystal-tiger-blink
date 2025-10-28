@@ -8,8 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Mail, Slack, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const API_URL = import.meta.env.VITE_API_BASE_URL;
+import apiClient from "@/lib/api";
 
 interface IntegrationSettings {
   connected: boolean;
@@ -31,20 +30,19 @@ const Integrations = () => {
     const fetchIntegrations = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_URL}/integrations`, {
-          credentials: 'include',
-        });
-        if (!response.ok) {
+        const response = await apiClient.get("/integrations");
+        if (response.status !== 200) {
           if (response.status === 401) {
             navigate("/");
           }
           throw new Error("Failed to fetch integrations");
         }
-        if (!response.ok) throw new Error("Failed to fetch integrations");
-        const data = await response.json();
-        setIntegrations(data);
-      } catch (error) {
-        toast.error(String(error));
+        setIntegrations(response.data);
+      } catch (error: any) {
+        toast.error(error.response?.data?.detail || String(error));
+        if (error.response?.status === 401) {
+          navigate("/");
+        }
       } finally {
         setLoading(false);
       }
@@ -64,19 +62,14 @@ const Integrations = () => {
     };
 
     try {
-      const response = await fetch(`${API_URL}/integrations`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: 'include',
-        body: JSON.stringify(updatedIntegrations),
-      });
-      if (!response.ok) throw new Error(`Failed to update ${integrationName} integration`);
+      const response = await apiClient.put("/integrations", updatedIntegrations);
+      if (response.status !== 200) {
+        throw new Error(`Failed to update ${integrationName} integration`);
+      }
       setIntegrations(updatedIntegrations);
       toast.success(`${integrationName} integration updated successfully!`);
-    } catch (error) {
-      toast.error(String(error));
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || String(error));
     }
   };
 

@@ -8,8 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Link, useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const API_URL = import.meta.env.VITE_API_BASE_URL;
+import apiClient from "@/lib/api";
 
 interface DailyQuote {
   quote: string;
@@ -46,19 +45,19 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_URL}/dashboard`, {
-          credentials: 'include',
-        });
-        if (!response.ok) {
+        const response = await apiClient.get("/dashboard");
+        if (response.status !== 200) {
           if (response.status === 401) {
             navigate("/");
           }
           throw new Error("Failed to fetch dashboard data");
         }
-        const data = await response.json();
-        setDashboardData(data);
-      } catch (error) {
-        toast.error(String(error));
+        setDashboardData(response.data);
+      } catch (error: any) {
+        toast.error(error.response?.data?.detail || String(error));
+        if (error.response?.status === 401) {
+          navigate("/");
+        }
       } finally {
         setLoading(false);
       }
@@ -68,10 +67,7 @@ const Dashboard = () => {
 
   const handleLogout = async () => {
     try {
-      await fetch(`${API_URL}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      await apiClient.post("/auth/logout");
       toast.success("Logged out successfully!");
       navigate("/");
     } catch (error) {

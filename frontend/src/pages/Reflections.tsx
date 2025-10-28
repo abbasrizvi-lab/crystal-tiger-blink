@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-
-const API_URL = import.meta.env.VITE_API_BASE_URL;
+import apiClient from "@/lib/api";
 
 interface Reflection {
   id: string;
@@ -27,20 +26,19 @@ const Reflections = () => {
     const fetchReflections = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_URL}/reflections`, {
-          credentials: 'include',
-        });
-        if (!response.ok) {
+        const response = await apiClient.get("/reflections");
+        if (response.status !== 200) {
           if (response.status === 401) {
             navigate("/");
           }
           throw new Error("Failed to fetch reflections");
         }
-        if (!response.ok) throw new Error("Failed to fetch reflections");
-        const data = await response.json();
-        setReflections(data);
-      } catch (error) {
-        toast.error(String(error));
+        setReflections(response.data);
+      } catch (error: any) {
+        toast.error(error.response?.data?.detail || String(error));
+        if (error.response?.status === 401) {
+          navigate("/");
+        }
       } finally {
         setLoading(false);
       }

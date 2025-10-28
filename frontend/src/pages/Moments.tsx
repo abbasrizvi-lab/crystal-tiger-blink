@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-
-const API_URL = import.meta.env.VITE_API_BASE_URL;
+import apiClient from "@/lib/api";
 
 interface Moment {
   id: string;
@@ -27,20 +26,19 @@ const Moments = () => {
     const fetchMoments = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_URL}/moments`, {
-          credentials: 'include',
-        });
-        if (!response.ok) {
+        const response = await apiClient.get("/moments");
+        if (response.status !== 200) {
           if (response.status === 401) {
             navigate("/");
           }
           throw new Error("Failed to fetch moments");
         }
-        if (!response.ok) throw new Error("Failed to fetch moments");
-        const data = await response.json();
-        setMoments(data);
-      } catch (error) {
-        toast.error(String(error));
+        setMoments(response.data);
+      } catch (error: any) {
+        toast.error(error.response?.data?.detail || String(error));
+        if (error.response?.status === 401) {
+          navigate("/");
+        }
       } finally {
         setLoading(false);
       }

@@ -5,8 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-
-const API_URL = import.meta.env.VITE_API_BASE_URL;
+import apiClient from "@/lib/api";
 
 const Index = () => {
   const [email, setEmail] = useState("");
@@ -15,20 +14,14 @@ const Index = () => {
 
   const handleSignup = async () => {
     try {
-      const response = await fetch(`${API_URL}/auth/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include',
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.detail || "Signup failed");
+      const response = await apiClient.post("/auth/signup", { email, password });
+      if (response.status !== 200) {
+        throw new Error(response.data.detail || "Signup failed");
       }
       toast.success("Signup successful!");
       navigate("/dashboard");
-    } catch (error) {
-      toast.error(String(error));
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || String(error));
     }
   };
 
@@ -38,20 +31,16 @@ const Index = () => {
       formData.append('username', email);
       formData.append('password', password);
 
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: "POST",
+      const response = await apiClient.post("/auth/login", formData, {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: formData,
-        credentials: 'include',
       });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.detail || "Login failed");
+      if (response.status !== 200) {
+        throw new Error(response.data.detail || "Login failed");
       }
       toast.success("Login successful!");
       navigate("/dashboard");
-    } catch (error) {
-      toast.error(String(error));
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || String(error));
     }
   };
 

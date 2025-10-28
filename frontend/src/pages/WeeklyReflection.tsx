@@ -17,8 +17,7 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const API_URL = import.meta.env.VITE_API_BASE_URL;
+import apiClient from "@/lib/api";
 
 interface AudioSummary {
   title: string;
@@ -55,27 +54,27 @@ const WeeklyReflection = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_URL}/reflections/weekly`, {
-          credentials: 'include',
-        });
-        if (!response.ok) {
+        const response = await apiClient.get("/reflections/weekly");
+        if (response.status !== 200) {
           if (response.status === 401) {
             navigate("/");
           }
           throw new Error("Failed to fetch weekly reflection data");
         }
-        if (!response.ok) throw new Error("Failed to fetch weekly reflection data");
-        const data = await response.json();
-        setReflectionData(data);
-      } catch (error) {
-        toast.error(String(error));
+        setReflectionData(response.data);
+      } catch (error: any) {
+        toast.error(error.response?.data?.detail || String(error));
+        if (error.response?.status === 401) {
+            navigate("/");
+        }
       } finally {
         setLoading(false);
       }
     };
     fetchData();
 
-    const ws = new WebSocket("ws://127.0.0.1:8001/ws/reflections");
+    const wsUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/^http/, 'ws') + '/ws/reflections';
+    const ws = new WebSocket(wsUrl);
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       setReflectionData(data);
