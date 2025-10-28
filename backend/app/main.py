@@ -25,6 +25,7 @@ origins = [
     "http://localhost:5173",
     "http://localhost:5137",
     "https://crystal-tiger-blink.onrender.com",
+    "https://crystal-tiger-blink-backend-a1b2c3d4.snapdev.app",
 ]
 
 app.add_middleware(
