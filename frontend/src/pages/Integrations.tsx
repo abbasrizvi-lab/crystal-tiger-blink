@@ -29,16 +29,17 @@ const Integrations = () => {
 
   useEffect(() => {
     const fetchIntegrations = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/");
-        return;
-      }
       try {
         setLoading(true);
         const response = await fetch(`${API_URL}/integrations`, {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         });
+        if (!response.ok) {
+          if (response.status === 401) {
+            navigate("/");
+          }
+          throw new Error("Failed to fetch integrations");
+        }
         if (!response.ok) throw new Error("Failed to fetch integrations");
         const data = await response.json();
         setIntegrations(data);
@@ -54,7 +55,6 @@ const Integrations = () => {
   const handleToggleIntegration = async (integrationName: keyof IntegrationsData) => {
     if (!integrations) return;
 
-    const token = localStorage.getItem("token");
     const updatedIntegrations = {
       ...integrations,
       [integrationName]: {
@@ -68,8 +68,8 @@ const Integrations = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(updatedIntegrations),
       });
       if (!response.ok) throw new Error(`Failed to update ${integrationName} integration`);

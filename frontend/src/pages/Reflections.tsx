@@ -25,16 +25,17 @@ const Reflections = () => {
 
   useEffect(() => {
     const fetchReflections = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/");
-        return;
-      }
       try {
         setLoading(true);
         const response = await fetch(`${API_URL}/reflections`, {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         });
+        if (!response.ok) {
+          if (response.status === 401) {
+            navigate("/");
+          }
+          throw new Error("Failed to fetch reflections");
+        }
         if (!response.ok) throw new Error("Failed to fetch reflections");
         const data = await response.json();
         setReflections(data);

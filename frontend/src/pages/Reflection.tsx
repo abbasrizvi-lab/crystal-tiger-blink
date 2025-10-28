@@ -43,7 +43,6 @@ const Reflection = () => {
       toast.error(`Please enter your ${type}.`);
       return;
     }
-    const token = localStorage.getItem("token");
     try {
       const formData = new FormData();
       const momentText = type === "reflection" && quote ? `Reflection on "${quote}": ${text}` : text;
@@ -54,9 +53,7 @@ const Reflection = () => {
       }
       const response = await fetch(`${API_URL}/moments`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'include',
         body: formData,
       });
       if (!response.ok) throw new Error(`Failed to save ${type}`);

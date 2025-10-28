@@ -44,17 +44,17 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/");
-        return;
-      }
       try {
         setLoading(true);
         const response = await fetch(`${API_URL}/dashboard`, {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         });
-        if (!response.ok) throw new Error("Failed to fetch dashboard data");
+        if (!response.ok) {
+          if (response.status === 401) {
+            navigate("/");
+          }
+          throw new Error("Failed to fetch dashboard data");
+        }
         const data = await response.json();
         setDashboardData(data);
       } catch (error) {
@@ -66,11 +66,26 @@ const Dashboard = () => {
     fetchData();
   }, [navigate]);
 
+  const handleLogout = async () => {
+    try {
+      await fetch(`${API_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      toast.success("Logged out successfully!");
+      navigate("/");
+    } catch (error) {
+      toast.error("Logout failed.");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto space-y-8">
-        <h1 className="text-3xl font-bold text-center text-foreground">Your Innovation Character Dashboard</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-foreground">Your Innovation Character Dashboard</h1>
+          <Button onClick={handleLogout} variant="outline">Logout</Button>
+        </div>
 
         {loading ? (
           <>

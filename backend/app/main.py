@@ -23,6 +23,7 @@ app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__
 # CORS configuration
 origins = [
     "http://localhost:5173",
+    "http://localhost:5137",
     "https://crystal-tiger-blink.onrender.com",
 ]
 
@@ -67,7 +68,9 @@ def signup(user: models.UserCreate, db: MongoClient = Depends(get_db)):
     access_token = auth.create_access_token(
         data={"sub": user.email}
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    response = JSONResponse(content={"access_token": access_token, "token_type": "bearer"})
+    response.set_cookie(key="access_token", value=access_token, httponly=True)
+    return response
 
 @app.post("/api/v1/auth/login", response_model=models.Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: MongoClient = Depends(get_db)):
@@ -103,8 +106,10 @@ def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
     return current_user
 
 @app.post("/api/v1/auth/logout")
-def logout(current_user: models.User = Depends(auth.get_current_user)):
-    return {"message": "Successfully logged out"}
+def logout():
+    response = JSONResponse(content={"message": "Successfully logged out"})
+    response.delete_cookie(key="access_token")
+    return response
 
 @app.get("/api/v1/users/me/settings", response_model=models.UserSettings)
 def get_user_settings(current_user: models.User = Depends(auth.get_current_user), db: MongoClient = Depends(get_db)):

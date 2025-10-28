@@ -63,15 +63,16 @@ const Settings = () => {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/");
-        return;
-      }
       try {
         const response = await fetch(`${API_URL}/users/me/settings`, {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         });
+        if (!response.ok) {
+          if (response.status === 401) {
+            navigate("/");
+          }
+          throw new Error("Failed to fetch settings");
+        }
         if (!response.ok) throw new Error("Failed to fetch settings");
         const settings = await response.json();
         form.reset({ priorityVirtues: settings.priorityVirtues });
@@ -117,14 +118,13 @@ const Settings = () => {
   };
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
-    const token = localStorage.getItem("token");
     try {
       const response = await fetch(`${API_URL}/users/me/settings`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           priorityVirtues: data.priorityVirtues,
           customVirtues: customVirtues,

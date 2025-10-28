@@ -53,16 +53,17 @@ const WeeklyReflection = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/");
-        return;
-      }
       try {
         setLoading(true);
         const response = await fetch(`${API_URL}/reflections/weekly`, {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         });
+        if (!response.ok) {
+          if (response.status === 401) {
+            navigate("/");
+          }
+          throw new Error("Failed to fetch weekly reflection data");
+        }
         if (!response.ok) throw new Error("Failed to fetch weekly reflection data");
         const data = await response.json();
         setReflectionData(data);

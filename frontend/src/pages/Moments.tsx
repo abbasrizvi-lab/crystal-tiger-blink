@@ -25,16 +25,17 @@ const Moments = () => {
 
   useEffect(() => {
     const fetchMoments = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/");
-        return;
-      }
       try {
         setLoading(true);
         const response = await fetch(`${API_URL}/moments`, {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         });
+        if (!response.ok) {
+          if (response.status === 401) {
+            navigate("/");
+          }
+          throw new Error("Failed to fetch moments");
+        }
         if (!response.ok) throw new Error("Failed to fetch moments");
         const data = await response.json();
         setMoments(data);

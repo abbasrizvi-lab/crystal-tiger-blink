@@ -23,16 +23,17 @@ const Articles = () => {
 
   useEffect(() => {
     const fetchArticles = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/");
-        return;
-      }
       try {
         setLoading(true);
         const response = await fetch(`${API_URL}/articles`, {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         });
+        if (!response.ok) {
+          if (response.status === 401) {
+            navigate("/");
+          }
+          throw new Error("Failed to fetch articles");
+        }
         if (!response.ok) throw new Error("Failed to fetch articles");
         const data = await response.json();
         setArticles(data);
