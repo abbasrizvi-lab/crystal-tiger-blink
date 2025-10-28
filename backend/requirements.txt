@@ -2,3 +2,8 @@ fastapi
 uvicorn
 pymongo
 python-dotenv
+passlib
+bcrypt
+python-jose
+python-multipart
+gTTS==2.2.3

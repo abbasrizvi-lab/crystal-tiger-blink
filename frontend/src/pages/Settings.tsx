@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -21,7 +21,8 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { XCircle } from "lucide-react";
 
-// Define the 10 core virtues for the R.I.G.H.T. framework
+const API_URL = "http://127.0.0.1:8001/api/v1";
+
 const predefinedVirtues = [
   { id: "resilience", label: "Resilience" },
   { id: "integrity", label: "Integrity" },
@@ -35,6 +36,11 @@ const predefinedVirtues = [
   { id: "creativity", label: "Creativity" },
 ] as const;
 
+type Virtue = {
+  id: string;
+  label: string;
+};
+
 const FormSchema = z.object({
   priorityVirtues: z.array(z.string()).refine(
     (val) => val.length >= 2 && val.length <= 3,
@@ -42,13 +48,11 @@ const FormSchema = z.object({
   ),
 });
 
-const PRIORITY_VIRTUES_KEY = "priorityVirtues";
-const CUSTOM_VIRTUES_KEY = "customVirtues";
-
 const Settings = () => {
   const navigate = useNavigate();
   const [customVirtueInput, setCustomVirtueInput] = React.useState("");
-  const [allVirtues, setAllVirtues] = React.useState(predefinedVirtues);
+  const [allVirtues, setAllVirtues] = React.useState<Virtue[]>([...predefinedVirtues]);
+  const [customVirtues, setCustomVirtues] = React.useState<string[]>([]);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -57,66 +61,81 @@ const Settings = () => {
     },
   });
 
-  // Load existing virtues and custom virtues from localStorage on component mount
-  React.useEffect(() => {
-    const storedPriorityVirtues = localStorage.getItem(PRIORITY_VIRTUES_KEY);
-    if (storedPriorityVirtues) {
-      form.reset({ priorityVirtues: JSON.parse(storedPriorityVirtues) });
-    }
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/");
+        return;
+      }
+      try {
+        const response = await fetch(`${API_URL}/users/me/settings`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) throw new Error("Failed to fetch settings");
+        const settings = await response.json();
+        form.reset({ priorityVirtues: settings.priorityVirtues });
+        setCustomVirtues(settings.customVirtues);
+        const customVirtuesObjects = settings.customVirtues.map((v: string) => ({ id: v.toLowerCase().replace(/\s/g, '-'), label: v }));
+        setAllVirtues([...predefinedVirtues, ...customVirtuesObjects]);
+      } catch (error) {
+        toast.error(String(error));
+      }
+    };
+    fetchSettings();
+  }, [form, navigate]);
 
-    const storedCustomVirtues = localStorage.getItem(CUSTOM_VIRTUES_KEY);
-    if (storedCustomVirtues) {
-      const parsedCustomVirtues = JSON.parse(storedCustomVirtues).map((v: string) => ({ id: v.toLowerCase().replace(/\s/g, '-'), label: v }));
-      setAllVirtues([...predefinedVirtues, ...parsedCustomVirtues]);
-    }
-  }, [form]);
-
-  // Update allVirtues when custom virtues change
-  React.useEffect(() => {
-    const storedCustomVirtues = localStorage.getItem(CUSTOM_VIRTUES_KEY);
-    const parsedCustomVirtues = storedCustomVirtues ? JSON.parse(storedCustomVirtues).map((v: string) => ({ id: v.toLowerCase().replace(/\s/g, '-'), label: v })) : [];
-    setAllVirtues([...predefinedVirtues, ...parsedCustomVirtues]);
-  }, [localStorage.getItem(CUSTOM_VIRTUES_KEY)]); // Re-run when custom virtues in localStorage change
+  const updateAllVirtues = (updatedCustomVirtues: string[]) => {
+    const customVirtuesObjects = updatedCustomVirtues.map((v: string) => ({ id: v.toLowerCase().replace(/\s/g, '-'), label: v }));
+    setAllVirtues([...predefinedVirtues, ...customVirtuesObjects]);
+  };
 
   const handleAddCustomVirtue = () => {
     const trimmedInput = customVirtueInput.trim();
-    if (trimmedInput && !allVirtues.some(v => v.label.toLowerCase() === trimmedInput.toLowerCase())) {
-      const newCustomVirtue = { id: trimmedInput.toLowerCase().replace(/\s/g, '-'), label: trimmedInput };
-      const updatedCustomVirtues = [...(JSON.parse(localStorage.getItem(CUSTOM_VIRTUES_KEY) || "[]")), trimmedInput];
-      localStorage.setItem(CUSTOM_VIRTUES_KEY, JSON.stringify(updatedCustomVirtues));
+    if (trimmedInput && !customVirtues.some(v => v.toLowerCase() === trimmedInput.toLowerCase())) {
+      const updatedCustomVirtues = [...customVirtues, trimmedInput];
+      setCustomVirtues(updatedCustomVirtues);
+      updateAllVirtues(updatedCustomVirtues);
       setCustomVirtueInput("");
-      toast.success(`Custom virtue "${trimmedInput}" added!`);
-      // Re-fetch all virtues to include the new one
-      const storedCustomVirtues = localStorage.getItem(CUSTOM_VIRTUES_KEY);
-      const parsedCustomVirtues = storedCustomVirtues ? JSON.parse(storedCustomVirtues).map((v: string) => ({ id: v.toLowerCase().replace(/\s/g, '-'), label: v })) : [];
-      setAllVirtues([...predefinedVirtues, ...parsedCustomVirtues]);
-    } else if (trimmedInput) {
+      toast.success(`Custom virtue "${trimmedInput}" added locally. Save to confirm.`);
+    } else {
       toast.error("Virtue already exists or is empty.");
     }
   };
 
-  const handleRemoveCustomVirtue = (virtueId: string) => {
-    const updatedCustomVirtues = JSON.parse(localStorage.getItem(CUSTOM_VIRTUES_KEY) || "[]").filter((v: string) => v.toLowerCase().replace(/\s/g, '-') !== virtueId);
-    localStorage.setItem(CUSTOM_VIRTUES_KEY, JSON.stringify(updatedCustomVirtues));
-    toast.success("Custom virtue removed.");
-
-    // Also remove from selected priority virtues if it was selected
+  const handleRemoveCustomVirtue = (virtueLabel: string) => {
+    const updatedCustomVirtues = customVirtues.filter(v => v !== virtueLabel);
+    setCustomVirtues(updatedCustomVirtues);
+    updateAllVirtues(updatedCustomVirtues);
+    
     const currentPriorityVirtues = form.getValues("priorityVirtues");
+    const virtueId = virtueLabel.toLowerCase().replace(/\s/g, '-');
     const updatedPriorityVirtues = currentPriorityVirtues.filter(id => id !== virtueId);
     form.setValue("priorityVirtues", updatedPriorityVirtues);
-
-    // Re-fetch all virtues to reflect removal
-    const storedCustomVirtues = localStorage.getItem(CUSTOM_VIRTUES_KEY);
-    const parsedCustomVirtues = storedCustomVirtues ? JSON.parse(storedCustomVirtues).map((v: string) => ({ id: v.toLowerCase().replace(/\s/g, '-'), label: v })) : [];
-    setAllVirtues([...predefinedVirtues, ...parsedCustomVirtues]);
+    
+    toast.success("Custom virtue removed locally. Save to confirm.");
   };
 
-  function onSubmit(data: z.infer<typeof FormSchema>) {
-    localStorage.setItem(PRIORITY_VIRTUES_KEY, JSON.stringify(data.priorityVirtues));
-    toast.success("Priority virtues updated!", {
-      description: `You've adjusted to: ${data.priorityVirtues.map(v => allVirtues.find(virt => virt.id === v)?.label).join(", ")}`,
-    });
-    navigate("/dashboard"); // Go back to dashboard after updating
+  async function onSubmit(data: z.infer<typeof FormSchema>) {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`${API_URL}/users/me/settings`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          priorityVirtues: data.priorityVirtues,
+          customVirtues: customVirtues,
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to update settings");
+      toast.success("Priority virtues updated!");
+      navigate("/dashboard");
+    } catch (error) {
+      toast.error(String(error));
+    }
   }
 
   return (
@@ -134,7 +153,7 @@ const Settings = () => {
               <FormField
                 control={form.control}
                 name="priorityVirtues"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <div className="mb-4">
                       <FormLabel className="text-base">Available Virtues</FormLabel>
@@ -148,23 +167,22 @@ const Settings = () => {
                           key={item.id}
                           control={form.control}
                           name="priorityVirtues"
-                          render={({ field: innerField }) => {
+                          render={({ field }) => {
                             const isCustom = !predefinedVirtues.some(v => v.id === item.id);
                             return (
                               <FormItem
-                                key={item.id}
                                 className="flex flex-row items-start space-x-3 space-y-0"
                               >
                                 <FormControl>
                                   <Checkbox
-                                    checked={innerField.value?.includes(item.id)}
+                                    checked={field.value?.includes(item.id)}
                                     onCheckedChange={(checked) => {
                                       const newValue = checked
-                                        ? [...innerField.value, item.id]
-                                        : innerField.value?.filter(
+                                        ? [...field.value, item.id]
+                                        : field.value?.filter(
                                             (value) => value !== item.id,
                                           );
-                                      innerField.onChange(newValue);
+                                      field.onChange(newValue);
                                     }}
                                   />
                                 </FormControl>
@@ -177,7 +195,7 @@ const Settings = () => {
                                     size="icon"
                                     onClick={(e) => {
                                       e.preventDefault();
-                                      handleRemoveCustomVirtue(item.id);
+                                      handleRemoveCustomVirtue(item.label);
                                     }}
                                     className="h-6 w-6"
                                   >

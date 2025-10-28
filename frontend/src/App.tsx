@@ -11,6 +11,9 @@ import Settings from "./pages/Settings";
 import Integrations from "./pages/Integrations"; // Import new Integrations page
 import PeerFeedback from "./pages/PeerFeedback"; // Import new PeerFeedback page
 import NotFound from "./pages/NotFound";
+import Reflection from "./pages/Reflection";
+import Articles from "./pages/Articles";
+import Moments from "./pages/Moments";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +31,9 @@ const App = () => (
           <Route path="/settings" element={<Settings />} />
           <Route path="/integrations" element={<Integrations />} /> {/* New route */}
           <Route path="/peer-feedback" element={<PeerFeedback />} /> {/* New route */}
+          <Route path="/reflection" element={<Reflection />} />
+          <Route path="/articles" element={<Articles />} />
+          <Route path="/moments" element={<Moments />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
