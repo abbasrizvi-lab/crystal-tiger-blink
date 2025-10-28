@@ -221,15 +221,15 @@ def get_dashboard_data(current_user: models.User = Depends(auth.get_current_user
     
     try:
         random_quote = next(quote_cursor)
-        daily_quote = {
+        daily_quote_data = {
             "quote": random_quote["text"],
             "author": random_quote["author"],
             "reflectionPrompt": "How can you apply this wisdom to your work today?"
         }
     except StopIteration:
-        # Handle the case where the quotes collection is empty
-        daily_quote = {
-            "quote": "The journey of a thousand miles begins with a single step.",
+        # Fallback if the quotes collection is empty
+        daily_quote_data = {
+            "quote": "Welcome! The journey of a thousand miles begins with a single step.",
             "author": "Lao Tzu",
             "reflectionPrompt": "What is the first step you can take on your journey today?"
         }
@@ -239,37 +239,31 @@ def get_dashboard_data(current_user: models.User = Depends(auth.get_current_user
     articles_cursor = db.articles.aggregate(articles_pipeline)
     articles = list(articles_cursor)
 
-    if articles:
-        news_articles = [
-            {
-                "id": str(article["_id"]),
-                "title": article["title"],
-                "summary": article.get("summary", "No summary available."),
-                "link": article["url"]
-            } for article in articles
-        ]
-    else:
-        # Provide default articles if the collection is empty
-        news_articles = [
+    news_articles_data = [
+        {
+            "id": str(article["_id"]),
+            "title": article["title"],
+            "summary": article.get("summary", "No summary available."),
+            "link": article["url"]
+        } for article in articles
+    ]
+
+    if not news_articles_data:
+        # Fallback if the articles collection is empty
+        news_articles_data = [
             {
                 "id": "default1",
-                "title": "The Importance of Mindfulness in Daily Life",
-                "summary": "Discover how mindfulness can improve your focus and well-being.",
-                "link": "#"
-            },
-            {
-                "id": "default2",
-                "title": "How to Cultivate a Growth Mindset",
-                "summary": "Learn the strategies to develop a mindset that embraces challenges.",
+                "title": "No articles available yet",
+                "summary": "Content is being updated. Please check back later.",
                 "link": "#"
             }
         ]
     
-    return {
-        "dailyQuote": daily_quote,
-        "newsArticles": news_articles,
-        "growthTrends": growth_trends,
-    }
+    return models.DashboardData(
+        dailyQuote=daily_quote_data,
+        newsArticles=news_articles_data,
+        growthTrends=growth_trends,
+    )
 
 @app.get("/api/v1/articles", response_model=List[models.NewsArticle])
 def get_all_articles(db: MongoClient = Depends(get_db)):
