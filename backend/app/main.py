@@ -187,6 +187,8 @@ def get_reflections(current_user: models.User = Depends(auth.get_current_user), 
         ))
     return reflections
 
+from fastapi.responses import JSONResponse
+
 @app.get("/api/v1/dashboard", response_model=models.DashboardData)
 def get_dashboard_data(current_user: models.User = Depends(auth.get_current_user), db: MongoClient = Depends(get_db)):
     print("--- DASHBOARD: Endpoint called ---")
@@ -268,7 +270,12 @@ def get_dashboard_data(current_user: models.User = Depends(auth.get_current_user
         growthTrends=growth_trends,
     )
     print(f"--- DASHBOARD: Sending response data: {response_data.model_dump_json()} ---")
-    return response_data
+    
+    # Return a JSONResponse with cache-control headers to prevent caching
+    return JSONResponse(
+        content=response_data.model_dump(),
+        headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"}
+    )
 
 @app.get("/api/v1/articles", response_model=List[models.NewsArticle])
 def get_all_articles(db: MongoClient = Depends(get_db)):
