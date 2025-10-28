@@ -22,12 +22,13 @@ app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__
 
 # CORS configuration
 origins = [
-    "*",
+    "http://localhost:5173",
+    "https://crystal-tiger-blink.onrender.com",
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
