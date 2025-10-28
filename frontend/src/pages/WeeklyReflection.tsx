@@ -73,6 +73,16 @@ const WeeklyReflection = () => {
       }
     };
     fetchData();
+
+    const ws = new WebSocket("ws://127.0.0.1:8001/ws/reflections");
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      setReflectionData(data);
+    };
+
+    return () => {
+      ws.close();
+    };
   }, [navigate]);
 
   const handlePlayAudio = () => {
@@ -98,10 +108,13 @@ const WeeklyReflection = () => {
     window.speechSynthesis.speak(utterance);
   };
 
+
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto space-y-8">
-        <h1 className="text-3xl font-bold text-center text-foreground">Weekly Character Reflection</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-foreground">Weekly Character Reflection</h1>
+        </div>
 
         {loading ? (
           <>

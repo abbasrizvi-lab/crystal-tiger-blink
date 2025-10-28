@@ -24,6 +24,7 @@ class UserSettings(BaseModel):
 
 class MomentCreate(BaseModel):
     text: str
+    type: str
 
 class Moment(MomentCreate):
     id: str

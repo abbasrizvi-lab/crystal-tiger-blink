@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, Depends, HTTPException, status, Request, File, UploadFile, Form
+from fastapi import FastAPI, Depends, HTTPException, status, Request, File, UploadFile, Form, WebSocket
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
@@ -8,6 +8,7 @@ from . import models, auth
 from .background_tasks import generate_weekly_reflections
 from pymongo.mongo_client import MongoClient
 from typing import List
+from .ws_manager import connected_clients
 from bson import ObjectId
 from datetime import datetime, timedelta
 import random
@@ -21,7 +22,7 @@ app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__
 
 # CORS configuration
 origins = [
-    "http://localhost:5173",
+    "*",
 ]
 
 app.add_middleware(
@@ -120,7 +121,7 @@ def update_user_settings(settings: models.UserSettings, current_user: models.Use
     return settings
 
 @app.post("/api/v1/moments", response_model=models.Moment)
-def create_moment(text: str = Form(...), file: UploadFile = File(None), current_user: models.User = Depends(auth.get_current_user), db: MongoClient = Depends(get_db)):
+def create_moment(text: str = Form(...), type: str = Form(...), file: UploadFile = File(None), current_user: models.User = Depends(auth.get_current_user), db: MongoClient = Depends(get_db)):
     audio_url = None
     if file:
         audio_dir = "static/audio/moments"
@@ -135,6 +136,7 @@ def create_moment(text: str = Form(...), file: UploadFile = File(None), current_
     new_moment = {
         "userId": ObjectId(current_user.id),
         "text": text,
+        "type": type,
         "createdAt": datetime.utcnow(),
         "audioUrl": audio_url
     }
@@ -145,22 +147,38 @@ def create_moment(text: str = Form(...), file: UploadFile = File(None), current_
         id=str(created_moment["_id"]),
         userId=str(created_moment["userId"]),
         text=created_moment["text"],
+        type=created_moment["type"],
         createdAt=created_moment["createdAt"],
         audioUrl=created_moment.get("audioUrl")
     )
 
 @app.get("/api/v1/moments", response_model=List[models.Moment])
 def get_moments(current_user: models.User = Depends(auth.get_current_user), db: MongoClient = Depends(get_db)):
-    moments_cursor = db.moments.find({"userId": ObjectId(current_user.id)}).sort("createdAt", -1)
+    moments_cursor = db.moments.find({"userId": ObjectId(current_user.id), "type": "moment"}).sort("createdAt", -1)
     moments = []
     for moment in moments_cursor:
         moments.append(models.Moment(
             id=str(moment["_id"]),
             userId=str(moment["userId"]),
             text=moment["text"],
-            createdAt=moment["createdAt"]
+            createdAt=moment["createdAt"],
+            type="moment"
         ))
     return moments
+
+@app.get("/api/v1/reflections", response_model=List[models.Moment])
+def get_reflections(current_user: models.User = Depends(auth.get_current_user), db: MongoClient = Depends(get_db)):
+    reflections_cursor = db.moments.find({"userId": ObjectId(current_user.id), "type": "reflection"}).sort("createdAt", -1)
+    reflections = []
+    for reflection in reflections_cursor:
+        reflections.append(models.Moment(
+            id=str(reflection["_id"]),
+            userId=str(reflection["userId"]),
+            text=reflection["text"],
+            createdAt=reflection["createdAt"],
+            type="reflection"
+        ))
+    return reflections
 
 @app.get("/api/v1/dashboard", response_model=models.DashboardData)
 def get_dashboard_data(current_user: models.User = Depends(auth.get_current_user), db: MongoClient = Depends(get_db)):
@@ -252,12 +270,18 @@ def get_weekly_reflection(current_user: models.User = Depends(auth.get_current_u
     )
 
     if reflection:
-        audio_summary_text = reflection["reflectionData"]
-        number_of_moments = 0
-        for word in audio_summary_text.split():
-            if word.isdigit():
-                number_of_moments = int(word)
-                break
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        moments_cursor = db.moments.find({
+            "userId": ObjectId(current_user.id),
+            "createdAt": {"$gte": seven_days_ago}
+        })
+        moment_count = db.moments.count_documents({
+            "userId": ObjectId(current_user.id),
+            "createdAt": {"$gte": seven_days_ago}
+        })
+        
+        audio_summary_text = f"You've logged {moment_count} moments in the past week. Keep it up!"
+        number_of_moments = moment_count
     else:
         audio_summary_text = "No reflection data found. Generate reflections first."
         number_of_moments = 0
@@ -355,3 +379,14 @@ def trigger_generate_reflections():
     generate_weekly_reflections()
     return {"message": "Weekly reflections generation started."}
 
+
+@app.websocket("/ws/reflections")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    connected_clients.add(websocket)
+    try:
+        while True:
+            # Keep the connection alive
+            await websocket.receive_text()
+    except Exception:
+        connected_clients.remove(websocket)

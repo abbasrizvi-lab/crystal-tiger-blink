@@ -66,79 +66,6 @@ const Dashboard = () => {
     fetchData();
   }, [navigate]);
 
-  const handleLogMoment = async (audioBlob?: Blob) => {
-    if (!momentText.trim() && !audioBlob) {
-      toast.error("Please enter a moment or record a voice note to log.");
-      return;
-    }
-    const token = localStorage.getItem("token");
-    const formData = new FormData();
-    formData.append("text", momentText);
-    if (audioBlob) {
-      formData.append("file", audioBlob, "moment.webm");
-    }
-
-    try {
-      const response = await fetch(`${API_URL}/moments`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-      if (!response.ok) throw new Error("Failed to log moment");
-      toast.success("Character Moment Logged!");
-      setMomentText("");
-    } catch (error) {
-      toast.error(String(error));
-    }
-  };
-
-  const handleVoiceLog = async () => {
-    if (!navigator.mediaDevices || !window.MediaRecorder) {
-      toast.error("Voice recording is not supported in your browser.");
-      return;
-    }
-
-    if (isRecording) {
-      // This part will be handled by the onstop event of the MediaRecorder
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      const audioChunks: Blob[] = [];
-
-      mediaRecorder.onstart = () => {
-        setIsRecording(true);
-        toast.info("Recording...");
-      };
-
-      mediaRecorder.ondataavailable = (event) => {
-        audioChunks.push(event.data);
-      };
-
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-        handleLogMoment(audioBlob);
-        setIsRecording(false);
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      mediaRecorder.start();
-
-      // Stop recording after a delay or on a user action
-      setTimeout(() => {
-        if (mediaRecorder.state === "recording") {
-          mediaRecorder.stop();
-        }
-      }, 5000); // Stop after 5 seconds for example
-
-    } catch (error) {
-      toast.error("Error accessing microphone.");
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
@@ -174,31 +101,12 @@ const Dashboard = () => {
                         quote: dashboardData.dailyQuote.quote,
                         author: dashboardData.dailyQuote.author,
                         reflectionPrompt: dashboardData.dailyQuote.reflectionPrompt,
+                        type: "reflection",
                       },
                     })
                   }
                 >
-                  Reflect Now
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Quick Character Moment Logging */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Log a Character Moment</CardTitle>
-                <CardDescription>Quickly capture insights, successes, or challenges.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Textarea
-                  placeholder="e.g., 'Showed resilience by pushing through a tough coding bug.'"
-                  value={momentText}
-                  onChange={(e) => setMomentText(e.target.value)}
-                  rows={3}
-                />
-                <Button onClick={() => handleLogMoment()} className="w-full">Log Moment</Button>
-                <Button variant="outline" className="w-full" onClick={handleVoiceLog} disabled={isRecording}>
-                  {isRecording ? "Listening..." : "Log with Voice"}
+                  Reflect on this quote
                 </Button>
               </CardContent>
             </Card>
@@ -223,6 +131,12 @@ const Dashboard = () => {
                 <Link to="/moments">
                   <Button variant="outline" className="w-full mt-2">View Logged Moments</Button>
                 </Link>
+                <Link to="/reflections">
+                  <Button variant="outline" className="w-full mt-2">View Reflections</Button>
+                </Link>
+                <Button onClick={() => navigate("/reflection", { state: { type: "moment" } })} className="w-full mt-2">
+                  Log a Moment
+                </Button>
               </CardContent>
             </Card>
 

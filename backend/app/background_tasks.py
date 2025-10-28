@@ -4,6 +4,8 @@ from gtts import gTTS
 import os
 from collections import Counter
 import re
+import asyncio
+from .ws_manager import connected_clients
 
 # A list of common English stopwords to exclude from theme analysis
 STOPWORDS = set([
@@ -20,6 +22,13 @@ STOPWORDS = set([
     "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so",
     "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now"
 ])
+
+def get_moment_text(moment):
+    return moment.get("text", "")
+
+async def broadcast_reflection_update(data):
+    for client in connected_clients:
+        await client.send_json(data)
 
 def generate_weekly_reflections():
     db = get_db()
@@ -41,22 +50,17 @@ def generate_weekly_reflections():
         summary_text = "No moments logged this week. Try to capture a few thoughts next week!"
 
         if moments_count == 1:
-            # Correctly access the first moment's text from the dictionary in the list
-            moment_text = moments.get("text", "a reflection")
+            moment_text = get_moment_text(moments)
             summary_text = f"This week you captured one moment: '{moment_text}'. What will you focus on next?"
         elif moments_count > 1:
-            all_text = " ".join([m.get("text", "") for m in moments])
+            all_text = " ".join([get_moment_text(m) for m in moments])
             words = [word for word in re.findall(r'\b\w+\b', all_text.lower()) if word not in STOPWORDS]
             
-            if words:
-                # most_common returns a list of tuples, e.g., [('word', count)], so we extract the word
-                most_common_word = Counter(words).most_common(1) if words else "reflection"
-            else:
-                most_common_word = "reflection"
+            most_common_word_tuple = Counter(words).most_common(1)
+            most_common_word = most_common_word_tuple if most_common_word_tuple else "reflection"
 
-            # Correctly access the first and last moments' text from dictionaries in the list
-            first_moment_text = moments.get("text", "your first thought")
-            last_moment_text = moments[-1].get("text", "your last thought")
+            first_moment_text = get_moment_text(moments)
+            last_moment_text = get_moment_text(moments[-1])
             
             summary_text = (
                 f"This week you logged {moments_count} moments. "
@@ -66,7 +70,7 @@ def generate_weekly_reflections():
 
         reflection_data = {
             "userId": user["_id"],
-            "reflectionData": f"You've logged {moments_count} moments in the past week. Keep it up!",
+            "reflectionData": summary_text,
             "summaryText": summary_text,
             "generatedAt": datetime.now(),
             "audioUrl": None
@@ -88,3 +92,5 @@ def generate_weekly_reflections():
             )
         except Exception as e:
             print(f"Error generating TTS for reflection {reflection_id}: {e}")
+        
+        asyncio.run(broadcast_reflection_update(reflection_data))

@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import Reflection from "./pages/Reflection";
 import Articles from "./pages/Articles";
 import Moments from "./pages/Moments";
+import Reflections from "./pages/Reflections";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/reflection" element={<Reflection />} />
           <Route path="/articles" element={<Articles />} />
           <Route path="/moments" element={<Moments />} />
+          <Route path="/reflections" element={<Reflections />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

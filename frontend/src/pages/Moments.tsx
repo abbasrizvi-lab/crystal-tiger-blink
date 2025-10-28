@@ -83,8 +83,8 @@ const Moments = () => {
           <Card>
             <CardContent className="space-y-4 pt-6">
               {moments.length > 0 ? (
-                moments.map((moment) => (
-                  <div key={moment.id} className="border-b pb-3 last:border-b-0 last:pb-0 flex justify-between items-center">
+                moments.map((moment, index) => (
+                  <div key={`${moment.id}-${index}`} className="border-b pb-3 last:border-b-0 last:pb-0 flex justify-between items-center">
                     <div>
                       <p className="text-muted-foreground">{new Date(moment.createdAt).toLocaleString()}</p>
                       <p className="text-lg">{moment.text}</p>
@@ -103,6 +103,9 @@ const Moments = () => {
             </CardContent>
           </Card>
         )}
+        <Button onClick={() => navigate("/reflection", { state: { type: "moment" } })} className="w-full mt-8">
+          Log a New Moment
+        </Button>
         <Button onClick={() => navigate("/dashboard")} className="w-full mt-8">
           Back to Dashboard
         </Button>
