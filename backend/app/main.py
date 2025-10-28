@@ -189,6 +189,7 @@ def get_reflections(current_user: models.User = Depends(auth.get_current_user), 
 
 @app.get("/api/v1/dashboard", response_model=models.DashboardData)
 def get_dashboard_data(current_user: models.User = Depends(auth.get_current_user), db: MongoClient = Depends(get_db)):
+    print("--- DASHBOARD: Endpoint called ---")
     # --- Growth Trends Calculation ---
     now = datetime.utcnow()
     start_of_this_week = now - timedelta(days=now.weekday())
@@ -228,6 +229,7 @@ def get_dashboard_data(current_user: models.User = Depends(auth.get_current_user
         }
     except StopIteration:
         # Fallback if the quotes collection is empty
+        print("--- DASHBOARD: No quotes found in DB, using fallback. ---")
         daily_quote_data = {
             "quote": "Welcome! The journey of a thousand miles begins with a single step.",
             "author": "Lao Tzu",
@@ -250,6 +252,7 @@ def get_dashboard_data(current_user: models.User = Depends(auth.get_current_user
 
     if not news_articles_data:
         # Fallback if the articles collection is empty
+        print("--- DASHBOARD: No articles found in DB, using fallback. ---")
         news_articles_data = [
             {
                 "id": "default1",
@@ -259,11 +262,13 @@ def get_dashboard_data(current_user: models.User = Depends(auth.get_current_user
             }
         ]
     
-    return models.DashboardData(
+    response_data = models.DashboardData(
         dailyQuote=daily_quote_data,
         newsArticles=news_articles_data,
         growthTrends=growth_trends,
     )
+    print(f"--- DASHBOARD: Sending response data: {response_data.model_dump_json()} ---")
+    return response_data
 
 @app.get("/api/v1/articles", response_model=List[models.NewsArticle])
 def get_all_articles(db: MongoClient = Depends(get_db)):
