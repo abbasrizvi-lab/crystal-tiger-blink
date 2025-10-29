@@ -81,7 +81,7 @@ const Reflections = () => {
         ) : (
           <Card>
             <CardContent className="space-y-4 pt-6">
-              {reflections && reflections.length > 0 ? (
+              {Array.isArray(reflections) && reflections.length > 0 ? (
                 reflections.map((reflection, index) => (
                   <div key={`${reflection.id}-${index}`} className="border-b pb-3 last:border-b-0 last:pb-0 flex justify-between items-center">
                     <div>

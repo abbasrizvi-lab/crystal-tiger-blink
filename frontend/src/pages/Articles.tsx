@@ -57,7 +57,7 @@ const Articles = () => {
         ) : (
           <Card>
             <CardContent className="space-y-4 pt-6">
-              {articles && articles.length > 0 ? (
+              {Array.isArray(articles) && articles.length > 0 ? (
                 articles.map((article) => (
                   <div key={article.id} className="border-b pb-3 last:border-b-0 last:pb-0">
                     <h3 className="text-lg font-semibold">{article.title}</h3>

@@ -115,9 +115,9 @@ const Dashboard = () => {
                   onClick={() =>
                     navigate("/reflection", {
                       state: {
-                        quote: dashboardData.dailyQuote.quote,
-                        author: dashboardData.dailyQuote.author,
-                        reflectionPrompt: dashboardData.dailyQuote.reflectionPrompt,
+                        quote: dashboardData.dailyQuote?.quote,
+                        author: dashboardData.dailyQuote?.author,
+                        reflectionPrompt: dashboardData.dailyQuote?.reflectionPrompt,
                         type: "reflection",
                       },
                     })
@@ -186,7 +186,7 @@ const Dashboard = () => {
                 <CardDescription>Discover inspiring examples of virtue in the world.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {dashboardData.newsArticles && dashboardData.newsArticles.length > 0 ? (
+                {Array.isArray(dashboardData.newsArticles) && dashboardData.newsArticles.length > 0 ? (
                   dashboardData.newsArticles.map((article) => (
                     <div key={article.id} className="border-b pb-3 last:border-b-0 last:pb-0">
                       <h3 className="text-lg font-semibold">{article.title}</h3>

@@ -81,7 +81,7 @@ const Moments = () => {
         ) : (
           <Card>
             <CardContent className="space-y-4 pt-6">
-              {moments && moments.length > 0 ? (
+              {Array.isArray(moments) && moments.length > 0 ? (
                 moments.map((moment, index) => (
                   <div key={`${moment.id}-${index}`} className="border-b pb-3 last:border-b-0 last:pb-0 flex justify-between items-center">
                     <div>

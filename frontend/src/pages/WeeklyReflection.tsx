@@ -97,7 +97,7 @@ const WeeklyReflection = () => {
       return;
     }
 
-    const utterance = new SpeechSynthesisUtterance(reflectionData.audioSummary.summary);
+    const utterance = new SpeechSynthesisUtterance(reflectionData.audioSummary?.summary);
     utterance.onstart = () => {
       setIsPlaying(true);
       toast.info("Playing audio summary...");
@@ -122,7 +122,7 @@ const WeeklyReflection = () => {
             <Skeleton className="h-64 w-full" />
             <Skeleton className="h-48 w-full" />
           </>
-        ) : reflectionData && (
+        ) : reflectionData ? (
           <>
             {/* Weekly Audio Summary */}
             <Card>
@@ -159,7 +159,7 @@ const WeeklyReflection = () => {
                 <div className="h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
-                      data={reflectionData.growthData}
+                      data={reflectionData.growthData || []}
                       margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -191,7 +191,7 @@ const WeeklyReflection = () => {
                 <CardDescription>Personalized patterns supporting or hindering your character goals.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {reflectionData.calendarInsights && reflectionData.calendarInsights.length > 0 ? (
+                {Array.isArray(reflectionData.calendarInsights) && reflectionData.calendarInsights.length > 0 ? (
                   reflectionData.calendarInsights.map((insight, index) => (
                     <p key={index} className="text-muted-foreground">
                       • {insight}
@@ -217,6 +217,15 @@ const WeeklyReflection = () => {
               </CardContent>
             </Card>
           </>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>No Reflection Data</CardTitle>
+              <CardDescription>
+                There is no weekly reflection data available yet. Start by logging moments and reflections.
+              </CardDescription>
+            </CardHeader>
+          </Card>
         )}
 
         <Button onClick={() => navigate("/dashboard")} className="w-full mt-8">
