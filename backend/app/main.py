@@ -46,6 +46,25 @@ def health_check():
         return {"status": "ok", "database": "connected"}
     return {"status": "error", "database": "disconnected"}
 
+@app.get("/api/v1/diag")
+def run_diagnostics():
+    """
+    A diagnostic endpoint to test the production database connection from within the environment.
+    """
+    from pymongo import MongoClient
+    import os
+
+    mongodb_uri = os.getenv("MONGODB_URI")
+    if not mongodb_uri:
+        return JSONResponse(status_code=500, content={"status": "error", "detail": "MONGODB_URI is not set in the environment."})
+
+    try:
+        client = MongoClient(mongodb_uri, serverSelectionTimeoutMS=5000)
+        client.admin.command('ismaster')
+        return {"status": "success", "detail": "Successfully connected to MongoDB."}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"status": "error", "detail": str(e)})
+
 @app.post("/api/v1/auth/signup")
 def signup(user: models.UserCreate, db: MongoClient = Depends(get_db)):
     print(f"--- SIGNUP: Received request for email: {user.email} ---")
