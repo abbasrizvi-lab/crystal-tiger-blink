@@ -97,7 +97,7 @@ const Integrations = () => {
               </CardHeader>
               <CardContent>
                 <Button onClick={() => handleToggleIntegration("email")} className="w-full">
-                  {integrations.email.connected ? "Disconnect Email" : "Connect Email"}
+                  {integrations.email?.connected ? "Disconnect Email" : "Connect Email"}
                 </Button>
               </CardContent>
             </Card>
@@ -120,7 +120,7 @@ const Integrations = () => {
                     <span>Slack</span>
                   </div>
                   <Button size="sm" onClick={() => handleToggleIntegration("slack")}>
-                    {integrations.slack.connected ? "Disconnect" : "Connect"}
+                    {integrations.slack?.connected ? "Disconnect" : "Connect"}
                   </Button>
                 </div>
                 {/* Jira Integration */}
@@ -130,7 +130,7 @@ const Integrations = () => {
                     <span>Jira</span>
                   </div>
                   <Button size="sm" onClick={() => handleToggleIntegration("jira")}>
-                    {integrations.jira.connected ? "Disconnect" : "Connect"}
+                    {integrations.jira?.connected ? "Disconnect" : "Connect"}
                   </Button>
                 </div>
               </CardContent>

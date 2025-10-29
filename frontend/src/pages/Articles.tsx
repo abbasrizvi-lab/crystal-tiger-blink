@@ -57,15 +57,19 @@ const Articles = () => {
         ) : (
           <Card>
             <CardContent className="space-y-4 pt-6">
-              {articles.map((article) => (
-                <div key={article.id} className="border-b pb-3 last:border-b-0 last:pb-0">
-                  <h3 className="text-lg font-semibold">{article.title}</h3>
-                  <p className="text-muted-foreground text-sm mt-1">{article.summary}</p>
-                  <a href={article.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-sm mt-2 inline-block">
-                    Read More
-                  </a>
-                </div>
-              ))}
+              {articles && articles.length > 0 ? (
+                articles.map((article) => (
+                  <div key={article.id} className="border-b pb-3 last:border-b-0 last:pb-0">
+                    <h3 className="text-lg font-semibold">{article.title}</h3>
+                    <p className="text-muted-foreground text-sm mt-1">{article.summary}</p>
+                    <a href={article.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-sm mt-2 inline-block">
+                      Read More
+                    </a>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-muted-foreground">No articles available at the moment.</p>
+              )}
             </CardContent>
           </Card>
         )}

@@ -142,10 +142,11 @@ const Settings = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <FormField
-                control={form.control}
+          {form.formState.isDirty ? (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <FormField
+                  control={form.control}
                 name="priorityVirtues"
                 render={() => (
                   <FormItem>
@@ -227,7 +228,10 @@ const Settings = () => {
 
               <Button type="submit" className="w-full">Save Changes</Button>
             </form>
-          </Form>
+            </Form>
+          ) : (
+            <div className="text-center text-muted-foreground">Loading settings...</div>
+          )}
         </CardContent>
       </Card>
     </div>

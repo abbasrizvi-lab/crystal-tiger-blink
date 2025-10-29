@@ -136,11 +136,11 @@ const WeeklyReflection = () => {
                     <PlayCircle className="h-6 w-6" />
                   </Button>
                   <div>
-                    <h3 className="font-semibold">{reflectionData.audioSummary.title}</h3>
-                    <p className="text-sm text-muted-foreground">{reflectionData.audioSummary.duration}</p>
+                    <h3 className="font-semibold">{reflectionData.audioSummary?.title || "Summary"}</h3>
+                    <p className="text-sm text-muted-foreground">{reflectionData.audioSummary?.duration || "N/A"}</p>
                   </div>
                 </div>
-                <p className="text-muted-foreground">{reflectionData.audioSummary.summary}</p>
+                <p className="text-muted-foreground">{reflectionData.audioSummary?.summary || "Your weekly audio summary will appear here soon."}</p>
                 <Button className="w-full" onClick={handlePlayAudio}>
                   {isPlaying ? "Stop Playback" : "Play Audio Reflection"}
                 </Button>
@@ -191,11 +191,15 @@ const WeeklyReflection = () => {
                 <CardDescription>Personalized patterns supporting or hindering your character goals.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {reflectionData.calendarInsights.map((insight, index) => (
-                  <p key={index} className="text-muted-foreground">
-                    • {insight}
-                  </p>
-                ))}
+                {reflectionData.calendarInsights && reflectionData.calendarInsights.length > 0 ? (
+                  reflectionData.calendarInsights.map((insight, index) => (
+                    <p key={index} className="text-muted-foreground">
+                      • {insight}
+                    </p>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground">No calendar insights available yet.</p>
+                )}
               </CardContent>
             </Card>
 
@@ -208,8 +212,8 @@ const WeeklyReflection = () => {
                 <CardDescription>A focused exercise to develop your chosen virtues.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <h3 className="font-semibold text-lg">{reflectionData.virtueSuggestion.virtue}</h3>
-                <p className="text-muted-foreground">{reflectionData.virtueSuggestion.practice}</p>
+                <h3 className="font-semibold text-lg">{reflectionData.virtueSuggestion?.virtue || "Suggestion"}</h3>
+                <p className="text-muted-foreground">{reflectionData.virtueSuggestion?.practice || "Your virtue practice suggestion will appear here soon."}</p>
               </CardContent>
             </Card>
           </>
