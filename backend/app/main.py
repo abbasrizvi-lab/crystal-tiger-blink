@@ -320,6 +320,8 @@ def get_weekly_reflection(current_user: models.User = Depends(auth.get_current_u
     insights_cursor = db.calendar_insights.find()
     insights = [item['insight'] for item in insights_cursor]
     calendar_insights = random.sample(insights, 2) if len(insights) >= 2 else insights
+    if not calendar_insights:
+        calendar_insights = ["No calendar insights available yet."]
 
     # Fetch a random virtue suggestion from the database
     # Fetch a random virtue suggestion using an aggregation pipeline
