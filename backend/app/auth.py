@@ -11,16 +11,23 @@ from pymongo.mongo_client import MongoClient
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("JWT_SECRET", "a_default_secret_key")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+SECRET_KEY = os.getenv("JWT_SECRET", "your_super_secret_key_change_this")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__ident="2b")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+    print(f"--- AUTH: Verifying password. Plain: '{plain_password}', Hashed: '{hashed_password}' ---")
+    try:
+        is_verified = pwd_context.verify(plain_password, hashed_password)
+        print(f"--- AUTH: Password verification result: {is_verified} ---")
+        return is_verified
+    except Exception as e:
+        print(f"--- AUTH: ERROR during password verification: {e} ---")
+        return False
 
 def get_password_hash(password):
     print("--- Hashing password ---")
