@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Request, File, UploadFile, Form, WebSocket
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from .db import ping_db, get_db
@@ -11,12 +11,27 @@ from .ws_manager import connected_clients
 from bson import ObjectId
 from datetime import datetime, timedelta
 import random
+import os
 
 from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Serve frontend static files
+STATIC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "static"))
+# Correctly determine the frontend directory relative to the backend's app directory
+FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist"))
+
+app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")), name="assets")
+
+@app.get("/{full_path:path}")
+async def serve_frontend(full_path: str, request: Request):
+    file_path = os.path.join(FRONTEND_DIR, "index.html")
+    if os.path.exists(file_path):
+        return FileResponse(file_path)
+    return JSONResponse(status_code=404, content={"message": "Frontend not found"})
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 # CORS configuration
