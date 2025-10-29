@@ -98,11 +98,17 @@ const Dashboard = () => {
                 <CardDescription>Cultivate wisdom through daily contemplation.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <blockquote className="border-l-4 pl-4 italic text-muted-foreground">
-                  "{dashboardData.dailyQuote.quote}"
-                  <footer className="text-sm mt-2 not-italic">- {dashboardData.dailyQuote.author}</footer>
-                </blockquote>
-                <p className="font-medium">{dashboardData.dailyQuote.reflectionPrompt}</p>
+                {dashboardData.dailyQuote && dashboardData.dailyQuote.quote ? (
+                  <>
+                    <blockquote className="border-l-4 pl-4 italic text-muted-foreground">
+                      "{dashboardData.dailyQuote.quote}"
+                      <footer className="text-sm mt-2 not-italic">- {dashboardData.dailyQuote.author}</footer>
+                    </blockquote>
+                    <p className="font-medium">{dashboardData.dailyQuote.reflectionPrompt}</p>
+                  </>
+                ) : (
+                  <p>Your daily reflection will appear here soon.</p>
+                )}
                 <Button
                   variant="outline"
                   className="w-full"

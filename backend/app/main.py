@@ -225,7 +225,7 @@ def get_dashboard_data(current_user: models.User = Depends(auth.get_current_user
     try:
         random_quote = next(quote_cursor)
         daily_quote_data = {
-            "quote": random_quote["text"],
+            "quote": random_quote["quote"],
             "author": random_quote["author"],
             "reflectionPrompt": "How can you apply this wisdom to your work today?"
         }
@@ -248,7 +248,7 @@ def get_dashboard_data(current_user: models.User = Depends(auth.get_current_user
             "id": str(article["_id"]),
             "title": article["title"],
             "summary": article.get("summary", "No summary available."),
-            "link": article["url"]
+            "link": article["link"]
         } for article in articles
     ]
 
