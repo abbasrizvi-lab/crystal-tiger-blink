@@ -24,22 +24,28 @@ const Moments = () => {
 
   useEffect(() => {
     const fetchMoments = async () => {
+      console.log("--- fetchMoments started ---");
       try {
         setLoading(true);
         const response = await apiClient.get("/moments");
+        console.log("--- Received response from backend ---", response);
         if (response.status !== 200) {
+          console.error("--- Backend returned non-200 status ---", response);
           if (response.status === 401) {
             navigate("/");
           }
           throw new Error("Failed to fetch moments");
         }
+        console.log("--- Setting moments data ---", response.data);
         setMoments(response.data);
       } catch (error: any) {
+        console.error("--- Error in fetchMoments ---", error);
         toast.error(error.response?.data?.detail || String(error));
         if (error.response?.status === 401) {
           navigate("/");
         }
       } finally {
+        console.log("--- fetchMoments finished ---");
         setLoading(false);
       }
     };

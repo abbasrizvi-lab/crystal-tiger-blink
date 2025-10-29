@@ -62,20 +62,25 @@ const Settings = () => {
 
   useEffect(() => {
     const fetchSettings = async () => {
+      console.log("--- fetchSettings started ---");
       try {
         const response = await apiClient.get("/users/me/settings");
+        console.log("--- Received settings from backend ---", response);
         if (response.status !== 200) {
+          console.error("--- Backend returned non-200 status ---", response);
           if (response.status === 401) {
             navigate("/");
           }
           throw new Error("Failed to fetch settings");
         }
         const settings = response.data;
+        console.log("--- Applying settings to form ---", settings);
         form.reset({ priorityVirtues: settings.priorityVirtues });
         setCustomVirtues(settings.customVirtues);
         const customVirtuesObjects = (settings.customVirtues || []).map((v: string) => ({ id: v.toLowerCase().replace(/\s/g, '-'), label: v }));
         setAllVirtues([...predefinedVirtues, ...customVirtuesObjects]);
       } catch (error: any) {
+        console.error("--- Error in fetchSettings ---", error);
         toast.error(error.response?.data?.detail || String(error));
         if (error.response?.status === 401) {
           navigate("/");
@@ -117,17 +122,24 @@ const Settings = () => {
   };
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
+    console.log("--- onSubmit started for settings ---");
     try {
-      const response = await apiClient.put("/users/me/settings", {
+      const settingsPayload = {
         priorityVirtues: data.priorityVirtues,
         customVirtues: customVirtues,
-      });
+      };
+      console.log("--- Sending settings to backend ---", settingsPayload);
+      const response = await apiClient.put("/users/me/settings", settingsPayload);
+      console.log("--- Received response from backend ---", response);
       if (response.status !== 200) {
+        console.error("--- Backend returned non-200 status ---", response);
         throw new Error("Failed to update settings");
       }
+      console.log("--- Settings updated successfully, navigating to dashboard ---");
       toast.success("Priority virtues updated!");
       navigate("/dashboard");
     } catch (error: any) {
+      console.error("--- Error in onSubmit for settings ---", error);
       toast.error(error.response?.data?.detail || String(error));
     }
   }

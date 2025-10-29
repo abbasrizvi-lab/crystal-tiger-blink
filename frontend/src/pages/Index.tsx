@@ -13,33 +13,45 @@ const Index = () => {
   const navigate = useNavigate();
 
   const handleSignup = async () => {
+    console.log("--- handleSignup started ---");
     try {
+      console.log("--- Sending signup data to backend ---", { email });
       const response = await apiClient.post("/auth/signup", { email, password });
+      console.log("--- Received response from backend ---", response);
       if (response.status !== 200) {
+        console.error("--- Backend returned non-200 status ---", response);
         throw new Error(response.data.detail || "Signup failed");
       }
+      console.log("--- Signup successful, navigating to dashboard ---");
       toast.success("Signup successful!");
       navigate("/dashboard");
     } catch (error: any) {
+      console.error("--- Error in handleSignup ---", error);
       toast.error(error.response?.data?.detail || String(error));
     }
   };
 
   const handleLogin = async () => {
+    console.log("--- handleLogin started ---");
     try {
       const formData = new URLSearchParams();
       formData.append('username', email);
       formData.append('password', password);
 
+      console.log("--- Sending login data to backend ---", { email });
       const response = await apiClient.post("/auth/login", formData, {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
+      console.log("--- Received response from backend ---", response);
       if (response.status !== 200) {
+        console.error("--- Backend returned non-200 status ---", response);
         throw new Error(response.data.detail || "Login failed");
       }
+      console.log("--- Login successful, navigating to dashboard ---");
       toast.success("Login successful!");
       navigate("/dashboard");
     } catch (error: any) {
+      console.error("--- Error in handleLogin ---", error);
       toast.error(error.response?.data?.detail || String(error));
     }
   };

@@ -28,22 +28,28 @@ const Integrations = () => {
 
   useEffect(() => {
     const fetchIntegrations = async () => {
+      console.log("--- fetchIntegrations started ---");
       try {
         setLoading(true);
         const response = await apiClient.get("/integrations");
+        console.log("--- Received integrations from backend ---", response);
         if (response.status !== 200) {
+          console.error("--- Backend returned non-200 status ---", response);
           if (response.status === 401) {
             navigate("/");
           }
           throw new Error("Failed to fetch integrations");
         }
+        console.log("--- Setting integrations data ---", response.data);
         setIntegrations(response.data);
       } catch (error: any) {
+        console.error("--- Error in fetchIntegrations ---", error);
         toast.error(error.response?.data?.detail || String(error));
         if (error.response?.status === 401) {
           navigate("/");
         }
       } finally {
+        console.log("--- fetchIntegrations finished ---");
         setLoading(false);
       }
     };
@@ -51,6 +57,7 @@ const Integrations = () => {
   }, [navigate]);
 
   const handleToggleIntegration = async (integrationName: keyof IntegrationsData) => {
+    console.log(`--- handleToggleIntegration started for ${integrationName} ---`);
     if (!integrations) return;
 
     const integration = integrations[integrationName];
@@ -68,13 +75,18 @@ const Integrations = () => {
     };
 
     try {
+      console.log(`--- Sending updated integrations to backend for ${integrationName} ---`, updatedIntegrations);
       const response = await apiClient.put("/integrations", updatedIntegrations);
+      console.log("--- Received response from backend ---", response);
       if (response.status !== 200) {
+        console.error("--- Backend returned non-200 status ---", response);
         throw new Error(`Failed to update ${integrationName} integration`);
       }
+      console.log(`--- ${integrationName} integration updated successfully ---`);
       setIntegrations(updatedIntegrations);
       toast.success(`${integrationName} integration updated successfully!`);
     } catch (error: any) {
+      console.error(`--- Error in handleToggleIntegration for ${integrationName} ---`, error);
       toast.error(error.response?.data?.detail || String(error));
     }
   };

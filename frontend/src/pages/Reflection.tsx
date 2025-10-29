@@ -38,7 +38,9 @@ const Reflection = () => {
   };
 
   const handleSave = async () => {
+    console.log(`--- handleSave started for type: ${type} ---`);
     if (!text.trim()) {
+      console.error("--- Validation failed: Text is empty. ---");
       toast.error(`Please enter your ${type}.`);
       return;
     }
@@ -50,13 +52,27 @@ const Reflection = () => {
       if (audioBlob) {
         formData.append("file", audioBlob, "moment.webm");
       }
+      
+      console.log("--- Sending data to backend ---", {
+        text: momentText,
+        type: type,
+        hasAudio: !!audioBlob,
+      });
+
       const response = await apiClient.post("/moments", formData);
+
+      console.log("--- Received response from backend ---", response);
+
       if (response.status !== 200) {
+        console.error("--- Backend returned non-200 status ---", response);
         throw new Error(`Failed to save ${type}`);
       }
+
+      console.log("--- ${type} saved successfully, navigating... ---");
       toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} saved successfully!`);
       navigate(type === "reflection" ? "/reflections" : "/moments");
     } catch (error: any) {
+      console.error("--- Error in handleSave ---", error);
       toast.error(error.response?.data?.detail || String(error));
     }
   };

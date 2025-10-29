@@ -24,22 +24,28 @@ const Reflections = () => {
 
   useEffect(() => {
     const fetchReflections = async () => {
+      console.log("--- fetchReflections started ---");
       try {
         setLoading(true);
         const response = await apiClient.get("/reflections");
+        console.log("--- Received response from backend ---", response);
         if (response.status !== 200) {
+          console.error("--- Backend returned non-200 status ---", response);
           if (response.status === 401) {
             navigate("/");
           }
           throw new Error("Failed to fetch reflections");
         }
+        console.log("--- Setting reflections data ---", response.data);
         setReflections(response.data);
       } catch (error: any) {
+        console.error("--- Error in fetchReflections ---", error);
         toast.error(error.response?.data?.detail || String(error));
         if (error.response?.status === 401) {
           navigate("/");
         }
       } finally {
+        console.log("--- fetchReflections finished ---");
         setLoading(false);
       }
     };

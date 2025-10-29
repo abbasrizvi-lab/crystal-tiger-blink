@@ -43,22 +43,28 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      console.log("--- fetchData started ---");
       try {
         setLoading(true);
         const response = await apiClient.get("/dashboard");
+        console.log("--- Received response from backend ---", response);
         if (response.status !== 200) {
+          console.error("--- Backend returned non-200 status ---", response);
           if (response.status === 401) {
             navigate("/");
           }
           throw new Error("Failed to fetch dashboard data");
         }
+        console.log("--- Setting dashboard data ---", response.data);
         setDashboardData(response.data);
       } catch (error: any) {
+        console.error("--- Error in fetchData ---", error);
         toast.error(error.response?.data?.detail || String(error));
         if (error.response?.status === 401) {
           navigate("/");
         }
       } finally {
+        console.log("--- fetchData finished ---");
         setLoading(false);
       }
     };
