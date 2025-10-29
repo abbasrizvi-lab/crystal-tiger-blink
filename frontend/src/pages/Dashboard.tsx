@@ -136,8 +136,14 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <p className="text-muted-foreground" dangerouslySetInnerHTML={{ __html: dashboardData.growthTrends.weekSummary }} />
-                  <p className="text-muted-foreground" dangerouslySetInnerHTML={{ __html: dashboardData.growthTrends.nextGoal }} />
+                  {dashboardData.growthTrends ? (
+                    <>
+                      <p className="text-muted-foreground" dangerouslySetInnerHTML={{ __html: dashboardData.growthTrends.weekSummary }} />
+                      <p className="text-muted-foreground" dangerouslySetInnerHTML={{ __html: dashboardData.growthTrends.nextGoal }} />
+                    </>
+                  ) : (
+                    <p>Your growth trends will appear here soon.</p>
+                  )}
                 </div>
                 <Link to="/weekly-reflection">
                   <Button variant="outline" className="w-full mt-4">View Weekly Reflection & Progress</Button>
@@ -180,15 +186,19 @@ const Dashboard = () => {
                 <CardDescription>Discover inspiring examples of virtue in the world.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {dashboardData.newsArticles.map((article) => (
-                  <div key={article.id} className="border-b pb-3 last:border-b-0 last:pb-0">
-                    <h3 className="text-lg font-semibold">{article.title}</h3>
-                    <p className="text-muted-foreground text-sm mt-1">{article.summary}</p>
-                    <a href={article.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-sm mt-2 inline-block">
-                      Read More
-                    </a>
-                  </div>
-                ))}
+                {dashboardData.newsArticles && dashboardData.newsArticles.length > 0 ? (
+                  dashboardData.newsArticles.map((article) => (
+                    <div key={article.id} className="border-b pb-3 last:border-b-0 last:pb-0">
+                      <h3 className="text-lg font-semibold">{article.title}</h3>
+                      <p className="text-muted-foreground text-sm mt-1">{article.summary}</p>
+                      <a href={article.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-sm mt-2 inline-block">
+                        Read More
+                      </a>
+                    </div>
+                  ))
+                ) : (
+                  <p>Inspiring articles will appear here soon.</p>
+                )}
                 <Link to="/articles">
                   <Button variant="outline" className="w-full">Find More Articles</Button>
                 </Link>
