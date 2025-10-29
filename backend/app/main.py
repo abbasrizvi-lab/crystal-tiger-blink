@@ -1,4 +1,3 @@
-import os
 from fastapi import FastAPI, Depends, HTTPException, status, Request, File, UploadFile, Form, WebSocket
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
 
-app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "..", "static")), name="static")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 # CORS configuration
@@ -68,6 +67,8 @@ def run_diagnostics():
 @app.post("/api/v1/auth/signup")
 def signup(user: models.UserCreate, db: MongoClient = Depends(get_db)):
     print(f"--- SIGNUP: Received request for email: {user.email} ---")
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database connection failed")
     db_user = db.users.find_one({"email": user.email})
     if db_user:
         print(f"--- SIGNUP: User with email {user.email} already exists ---")
@@ -95,6 +96,8 @@ def signup(user: models.UserCreate, db: MongoClient = Depends(get_db)):
 @app.post("/api/v1/auth/login", response_model=models.Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: MongoClient = Depends(get_db)):
     print(f"--- LOGIN: Attempting to log in user: {form_data.username} ---")
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database connection failed")
     user = db.users.find_one({"email": form_data.username})
     if not user:
         print(f"--- LOGIN: User not found: {form_data.username} ---")
@@ -205,6 +208,63 @@ def get_reflections(current_user: models.User = Depends(auth.get_current_user), 
             type="reflection"
         ))
     return reflections
+
+@app.post("/api/v1/reflections", response_model=models.Moment)
+def create_reflection(moment: models.MomentCreate, current_user: models.User = Depends(auth.get_current_user), db: MongoClient = Depends(get_db)):
+    new_moment = {
+        "userId": ObjectId(current_user.id),
+        "text": moment.text,
+        "type": "reflection",
+        "createdAt": datetime.utcnow()
+    }
+    result = db.moments.insert_one(new_moment)
+    created_moment = db.moments.find_one({"_id": result.inserted_id})
+    
+    return models.Moment(
+        id=str(created_moment["_id"]),
+        userId=str(created_moment["userId"]),
+        text=created_moment["text"],
+        type=created_moment["type"],
+        createdAt=created_moment["createdAt"]
+    )
+
+@app.get("/api/v1/peer-feedback", response_model=List[models.PeerFeedback])
+def get_peer_feedback(current_user: models.User = Depends(auth.get_current_user), db: MongoClient = Depends(get_db)):
+    feedback_cursor = db.peer_feedback.find({"recipientId": ObjectId(current_user.id)})
+    feedback_list = []
+    for feedback in feedback_cursor:
+        feedback_list.append(models.PeerFeedback(
+            id=str(feedback["_id"]),
+            recipientId=str(feedback["recipientId"]),
+            giverId=str(feedback["giverId"]),
+            text=feedback["text"],
+            createdAt=feedback["createdAt"]
+        ))
+    return feedback_list
+
+@app.post("/api/v1/peer-feedback", response_model=models.PeerFeedback)
+def create_peer_feedback(feedback: models.PeerFeedbackCreate, current_user: models.User = Depends(auth.get_current_user), db: MongoClient = Depends(get_db)):
+    recipient = db.users.find_one({"email": feedback.recipient_email})
+    if not recipient:
+        raise HTTPException(status_code=404, detail="Recipient not found")
+
+    new_feedback = {
+        "recipientId": recipient["_id"],
+        "giverId": ObjectId(current_user.id),
+        "text": feedback.text,
+        "createdAt": datetime.utcnow()
+    }
+    result = db.peer_feedback.insert_one(new_feedback)
+    created_feedback = db.peer_feedback.find_one({"_id": result.inserted_id})
+
+    return models.PeerFeedback(
+        id=str(created_feedback["_id"]),
+        recipientId=str(created_feedback["recipientId"]),
+        giverId=str(created_feedback["giverId"]),
+        text=created_feedback["text"],
+        createdAt=created_feedback["createdAt"],
+        recipient_email=feedback.recipient_email
+    )
 
 from fastapi.responses import JSONResponse
 

@@ -85,3 +85,16 @@ class Integrations(BaseModel):
     email: IntegrationSettings
     slack: IntegrationSettings
     jira: IntegrationSettings
+
+class PeerFeedbackCreate(BaseModel):
+    recipient_email: EmailStr
+    text: str
+
+class PeerFeedback(PeerFeedbackCreate):
+    id: str
+    giverId: str
+    recipientId: str
+    createdAt: datetime
+
+    class Config:
+        from_attributes = True

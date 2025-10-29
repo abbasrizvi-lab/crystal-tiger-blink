@@ -1,19 +1,16 @@
-import os
 from datetime import datetime, timedelta, timezone
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from jose import JWTError, jwt
-from dotenv import load_dotenv
 from . import models
 from .db import get_db
 from pymongo.mongo_client import MongoClient
+from .config import settings
 
-load_dotenv()
-
-SECRET_KEY = os.getenv("JWT_SECRET", "your_super_secret_key_change_this")
-ALGORITHM = os.getenv("ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
+SECRET_KEY = settings.JWT_SECRET
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__ident="2b")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
@@ -46,15 +43,12 @@ def create_access_token(data: dict):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def get_current_user(request: Request, db: MongoClient = Depends(get_db)):
+def get_current_user(request: Request, db: MongoClient = Depends(get_db), token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    token = request.cookies.get("access_token")
-    if token is None:
-        raise credentials_exception
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
@@ -65,7 +59,6 @@ def get_current_user(request: Request, db: MongoClient = Depends(get_db)):
     user = db.users.find_one({"email": email})
     if user is None:
         raise credentials_exception
-    user_model = models.User(id=str(user["_id"]), email=user["email"])
     user_data = user.copy()
     user_data["id"] = str(user_data.pop("_id"))
     user_model = models.User(**user_data)
