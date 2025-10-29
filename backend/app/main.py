@@ -151,8 +151,10 @@ def update_user_settings(settings: models.UserSettings, current_user: models.Use
 
 @app.post("/api/v1/moments", response_model=models.Moment)
 def create_moment(text: str = Form(...), type: str = Form(...), file: UploadFile = File(None), current_user: models.User = Depends(auth.get_current_user), db: MongoClient = Depends(get_db)):
+    print(f"--- CREATE_MOMENT: User '{current_user.email}' creating moment of type '{type}' with text: '{text}' ---")
     audio_url = None
     if file:
+        print(f"--- CREATE_MOMENT: Audio file received: {file.filename} ---")
         audio_dir = "static/audio/moments"
         if not os.path.exists(audio_dir):
             os.makedirs(audio_dir)
@@ -161,6 +163,7 @@ def create_moment(text: str = Form(...), type: str = Form(...), file: UploadFile
         with open(file_path, "wb") as buffer:
             buffer.write(file.file.read())
         audio_url = f"/static/audio/moments/{file.filename}"
+        print(f"--- CREATE_MOMENT: Audio file saved at '{audio_url}' ---")
 
     new_moment = {
         "userId": ObjectId(current_user.id),
@@ -169,10 +172,13 @@ def create_moment(text: str = Form(...), type: str = Form(...), file: UploadFile
         "createdAt": datetime.utcnow(),
         "audioUrl": audio_url
     }
+    print(f"--- CREATE_MOMENT: Inserting into DB: {new_moment} ---")
     result = db.moments.insert_one(new_moment)
+    print(f"--- CREATE_MOMENT: DB insertion result: {result.inserted_id} ---")
     created_moment = db.moments.find_one({"_id": result.inserted_id})
+    print(f"--- CREATE_MOMENT: Fetched created moment from DB: {created_moment} ---")
     
-    return models.Moment(
+    response_moment = models.Moment(
         id=str(created_moment["_id"]),
         userId=str(created_moment["userId"]),
         text=created_moment["text"],
@@ -180,53 +186,69 @@ def create_moment(text: str = Form(...), type: str = Form(...), file: UploadFile
         createdAt=created_moment["createdAt"],
         audioUrl=created_moment.get("audioUrl")
     )
+    print(f"--- CREATE_MOMENT: Returning response: {response_moment.model_dump_json()} ---")
+    return response_moment
 
 @app.get("/api/v1/moments", response_model=List[models.Moment])
 def get_moments(current_user: models.User = Depends(auth.get_current_user), db: MongoClient = Depends(get_db)):
+    print(f"--- GET_MOMENTS: Fetching moments for user '{current_user.email}' ---")
     moments_cursor = db.moments.find({"userId": ObjectId(current_user.id), "type": "moment"}).sort("createdAt", -1)
     moments = []
     for moment in moments_cursor:
+        print(f"--- GET_MOMENTS: Processing moment from DB: {moment} ---")
         moments.append(models.Moment(
             id=str(moment["_id"]),
             userId=str(moment["userId"]),
             text=moment["text"],
             createdAt=moment["createdAt"],
-            type="moment"
+            type="moment",
+            audioUrl=moment.get("audioUrl")
         ))
+    print(f"--- GET_MOMENTS: Found {len(moments)} moments. Returning response. ---")
     return moments
 
 @app.get("/api/v1/reflections", response_model=List[models.Moment])
 def get_reflections(current_user: models.User = Depends(auth.get_current_user), db: MongoClient = Depends(get_db)):
+    print(f"--- GET_REFLECTIONS: Fetching reflections for user '{current_user.email}' ---")
     reflections_cursor = db.moments.find({"userId": ObjectId(current_user.id), "type": "reflection"}).sort("createdAt", -1)
     reflections = []
     for reflection in reflections_cursor:
+        print(f"--- GET_REFLECTIONS: Processing reflection from DB: {reflection} ---")
         reflections.append(models.Moment(
             id=str(reflection["_id"]),
             userId=str(reflection["userId"]),
             text=reflection["text"],
             createdAt=reflection["createdAt"],
-            type="reflection"
+            type="reflection",
+            audioUrl=reflection.get("audioUrl")
         ))
+    print(f"--- GET_REFLECTIONS: Found {len(reflections)} reflections. Returning response. ---")
     return reflections
 
 @app.post("/api/v1/reflections", response_model=models.Moment)
 def create_reflection(moment: models.MomentCreate, current_user: models.User = Depends(auth.get_current_user), db: MongoClient = Depends(get_db)):
+    print(f"--- CREATE_REFLECTION: User '{current_user.email}' creating reflection with text: '{moment.text}' ---")
     new_moment = {
         "userId": ObjectId(current_user.id),
         "text": moment.text,
         "type": "reflection",
         "createdAt": datetime.utcnow()
     }
+    print(f"--- CREATE_REFLECTION: Inserting into DB: {new_moment} ---")
     result = db.moments.insert_one(new_moment)
+    print(f"--- CREATE_REFLECTION: DB insertion result: {result.inserted_id} ---")
     created_moment = db.moments.find_one({"_id": result.inserted_id})
+    print(f"--- CREATE_REFLECTION: Fetched created reflection from DB: {created_moment} ---")
     
-    return models.Moment(
+    response_moment = models.Moment(
         id=str(created_moment["_id"]),
         userId=str(created_moment["userId"]),
         text=created_moment["text"],
         type=created_moment["type"],
         createdAt=created_moment["createdAt"]
     )
+    print(f"--- CREATE_REFLECTION: Returning response: {response_moment.model_dump_json()} ---")
+    return response_moment
 
 @app.get("/api/v1/peer-feedback", response_model=List[models.PeerFeedback])
 def get_peer_feedback(current_user: models.User = Depends(auth.get_current_user), db: MongoClient = Depends(get_db)):
@@ -270,7 +292,7 @@ from fastapi.responses import JSONResponse
 
 @app.get("/api/v1/dashboard", response_model=models.DashboardData)
 def get_dashboard_data(current_user: models.User = Depends(auth.get_current_user), db: MongoClient = Depends(get_db)):
-    print("--- DASHBOARD: Endpoint called ---")
+    print(f"--- DASHBOARD: Endpoint called for user '{current_user.email}' ---")
     # --- Growth Trends Calculation ---
     now = datetime.utcnow()
     start_of_this_week = now - timedelta(days=now.weekday())
@@ -318,9 +340,11 @@ def get_dashboard_data(current_user: models.User = Depends(auth.get_current_user
         }
 
     # --- Fetch News Articles ---
+    print("--- DASHBOARD: Fetching news articles ---")
     articles_pipeline = [{ "$sample": { "size": 2 } }]
     articles_cursor = db.articles.aggregate(articles_pipeline)
     articles = list(articles_cursor)
+    print(f"--- DASHBOARD: Found {len(articles)} articles in DB ---")
 
     news_articles_data = [
         {
@@ -342,6 +366,7 @@ def get_dashboard_data(current_user: models.User = Depends(auth.get_current_user
                 "link": "#"
             }
         ]
+    print(f"--- DASHBOARD: Processed news articles data: {news_articles_data} ---")
     
     response_data = models.DashboardData(
         dailyQuote=daily_quote_data,
