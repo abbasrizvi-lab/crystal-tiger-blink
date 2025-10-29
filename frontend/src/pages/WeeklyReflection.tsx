@@ -73,7 +73,7 @@ const WeeklyReflection = () => {
     };
     fetchData();
 
-    const wsUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/^http/, 'ws') + '/ws/reflections';
+    const wsUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/^http/, 'ws').replace(/^https/, 'wss') + '/ws/reflections';
     const ws = new WebSocket(wsUrl);
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);

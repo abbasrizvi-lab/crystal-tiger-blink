@@ -73,7 +73,7 @@ const Settings = () => {
         const settings = response.data;
         form.reset({ priorityVirtues: settings.priorityVirtues });
         setCustomVirtues(settings.customVirtues);
-        const customVirtuesObjects = settings.customVirtues.map((v: string) => ({ id: v.toLowerCase().replace(/\s/g, '-'), label: v }));
+        const customVirtuesObjects = (settings.customVirtues || []).map((v: string) => ({ id: v.toLowerCase().replace(/\s/g, '-'), label: v }));
         setAllVirtues([...predefinedVirtues, ...customVirtuesObjects]);
       } catch (error: any) {
         toast.error(error.response?.data?.detail || String(error));

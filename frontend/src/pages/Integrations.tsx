@@ -53,11 +53,17 @@ const Integrations = () => {
   const handleToggleIntegration = async (integrationName: keyof IntegrationsData) => {
     if (!integrations) return;
 
+    const integration = integrations[integrationName];
+    if (!integration) {
+        toast.error(`Settings for ${integrationName} not found.`);
+        return;
+    }
+
     const updatedIntegrations = {
       ...integrations,
       [integrationName]: {
-        ...integrations[integrationName],
-        connected: !integrations[integrationName].connected,
+        ...integration,
+        connected: !integration.connected,
       },
     };
 
